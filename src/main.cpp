@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "display.h"
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 // Information about the LED strip itself
 #define LED_PIN     5
@@ -15,6 +17,9 @@ displayBuffer buffer1;
 
 // NTP Servers:
 static const char ntpServerName[] = "us.pool.ntp.org";
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, ntpServerName, -14400, 600000);	// -4 hours, 1 minute update interval
 
 void setup() {
 	
@@ -42,7 +47,7 @@ void setup() {
 			num++;
 		}
 		
-		FastLED.delay(40);
+		delay(10);
 	}
 	
 	WiFiManager wifiManager;
@@ -52,37 +57,43 @@ void setup() {
 		writeNumber(getActiveBuffer(), 1111);
 		setBicolorRainbow(getActiveBuffer(), 160, 0, 80, 255);
 		drawDisplay(getActiveBuffer(), leds);
-		FastLED.delay(1000);
+		delay(1000);
 	}
-	else{
-		writeNumber(getActiveBuffer(), 2222);
-		setBicolorRainbow(getActiveBuffer(), 96, 0, 80, 255);
+	
+	if (!wifiManager.autoConnect()) {
+		Serial.println("failed to connect and hit timeout");
+		//reset and try again, or maybe put it to deep sleep
+		writeNumber(getActiveBuffer(), 0);
+		setBicolorRainbow(getActiveBuffer(), 0, 0, 80, 255);
 		drawDisplay(getActiveBuffer(), leds);
-		FastLED.delay(1000);
+		delay(5000);
+		ESP.restart();
+		delay(1000);
 	}
+
+	
+	// Connection success!
+	writeNumber(getActiveBuffer(), 2222);
+	setBicolorRainbow(getActiveBuffer(), 96, 0, 80, 255);
+	drawDisplay(getActiveBuffer(), leds);
+	delay(1000);
+
+	timeClient.begin();
+	timeClient.update();
+
+	
 
 }
 
 void loop() {
 	
 	static int count = 0;
-	writeNumber(getActiveBuffer(), count);
-	setBicolorRainbow(getActiveBuffer(), count % 255, 100, 32, 255);
+	writeNumber(getActiveBuffer(), ((timeClient.getHours() % 12) * 100) + timeClient.getMinutes());
+	setBicolorRainbow(getActiveBuffer(), count % 255, 100, 40, 255);
 	drawDisplay(getActiveBuffer(), leds);
 	
+	//Serial.print("Hour:"); Serial.print(timeClient.getHours()); Serial.print(" | Formatted: "); Serial.println(((timeClient.getHours() % 12) * 100) + timeClient.getMinutes());
 	
-	// for(int i = 0; i < 70; i++){
-	// 	if(i == count % 70){
-	// 		leds[i] = CRGB::Red;
-	// 		leds[i+10] = CRGB::Red;
-	// 	}
-	// 	else{
-	// 		leds[i] = CRGB::Black;
-	// 	}
-	// }
-	
-	
-	// FastLED.show();
 	count++;
 	delay(20);
 
