@@ -1,6 +1,14 @@
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
+
+// Attempt to limit flickering
+// If these two lines are inadequate investigate this thread: 
+// https://www.reddit.com/r/FastLED/comments/viem4p/my_quest_for_flicker_some_oddities/
+#define FASTLED_ALLOW_INTERRUPTS 0			
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
+
+
 #include <FastLED.h>
 #include <math.h>
 
@@ -28,7 +36,7 @@ typedef struct pixel {
 typedef struct displayBuffer
 {
 
-    pixel layer0[LEDS_PER_DIGIT*DIGITS];  // Display buffer has an extra space for overflow pixels
+    pixel layer0[NUM_LEDS];
 
 } displayBuffer;
 

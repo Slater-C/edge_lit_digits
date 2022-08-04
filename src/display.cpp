@@ -51,16 +51,17 @@ void drawDisplay(displayBuffer* buffer, CRGB leds[]){
 		h = buffer->layer0[i].hue;
 		s = buffer->layer0[i].sat;
 		
-		if(buffer->layer0[i].transparent){
-			v = 0;
+		if(!buffer->layer0[i].transparent){
+			v = buffer->layer0[i].val;
+			leds[i].setHSV(h, s, v);
 		}
 		else{
-			v = buffer->layer0[i].val;
+			leds[i] = CRGB::Black;
 		}
-
-		leds[i].setHSV(h, s, v);
 	}
 	FastLED.show();
+	FastLED.delay(5);
+	delayMicroseconds(100);
 	flipBuffers();
 }
 
