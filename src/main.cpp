@@ -3,6 +3,7 @@
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include "clock.h"
 
 // Information about the LED strip itself
 #define LED_PIN     5
@@ -19,7 +20,7 @@ displayBuffer buffer1;
 static const char ntpServerName[] = "us.pool.ntp.org";
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, ntpServerName, -14400, 600000);	// -4 hours, 1 minute update interval
+NTPClient timeClient(ntpUDP, ntpServerName, -14400, 6000000);	// -4 hours, 1 hour update interval
 
 void setup() {
 	
@@ -88,7 +89,7 @@ void setup() {
 void loop() {
 	
 	static int count = 0;
-	writeNumber(getActiveBuffer(), ((timeClient.getHours() % 12) * 100) + timeClient.getMinutes());
+	writeNumber(getActiveBuffer(), formatTime(timeClient.getHours(), timeClient.getMinutes()));
 	setBicolorRainbow(getActiveBuffer(), count % 255, 100, 40, 255);
 	drawDisplay(getActiveBuffer(), leds);
 	
