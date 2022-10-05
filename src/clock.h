@@ -6,9 +6,4 @@
 #include <WiFiUdp.h>
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 
-// void printDigits(int digits);
-// time_t getNtpTime();
-// void sendNTPpacket(IPAddress &address);
-// void initTime();
-
 int formatTime(int hour, int minute);
