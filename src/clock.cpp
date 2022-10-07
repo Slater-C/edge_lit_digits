@@ -4,6 +4,7 @@
 
 int formatTime(int hour, int minute){
 	hour = (hour > 12) ? (hour - 12) : hour;
+	hour = (hour == 0) ? (hour = 12) : hour;
 	int time =  (hour * 100) + minute;
 
 	return time;
