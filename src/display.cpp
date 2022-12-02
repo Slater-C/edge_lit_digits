@@ -45,24 +45,29 @@ void drawDisplay(displayBuffer* buffer, CRGB leds[]){
 	uint8_t h;
     uint8_t s;
     uint8_t v;
+	static unsigned long lastUpdate = 0;
 
-	for (int i = 0; i < LEDS_PER_DIGIT*DIGITS; i++){
+	if(millis() > (lastUpdate + MAX_UPDATE_INTERVAL)){
+		for (int i = 0; i < LEDS_PER_DIGIT*DIGITS; i++){
 
-		h = buffer->layer0[i].hue;
-		s = buffer->layer0[i].sat;
-		
-		if(!buffer->layer0[i].transparent){
-			v = buffer->layer0[i].val;
-			leds[i].setHSV(h, s, v);
+			h = buffer->layer0[i].hue;
+			s = buffer->layer0[i].sat;
+			
+			if(!buffer->layer0[i].transparent){
+				v = buffer->layer0[i].val;
+				leds[i].setHSV(h, s, v);
+			}
+			else{
+				leds[i] = CRGB::Black;
+			}
 		}
-		else{
-			leds[i] = CRGB::Black;
-		}
+		FastLED.show();
+		FastLED.delay(5);
+		delayMicroseconds(100);
+		flipBuffers();
+		lastUpdate = millis();
 	}
-	FastLED.show();
-	FastLED.delay(5);
-	delayMicroseconds(100);
-	flipBuffers();
+
 }
 
 void writeNumber(displayBuffer* buffer, uint32_t number){
@@ -92,7 +97,7 @@ void setColorStatic(displayBuffer* buffer, uint8_t hue, uint8_t sat, uint8_t val
 	}
 }
 
-void setColorRainbow(displayBuffer* buffer, uint8_t offset, int width, uint8_t brightness){
+void setColorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, uint8_t brightness){
 	int delta = width / NUM_LEDS;
 
 	for(int i = 0; i < NUM_LEDS; i++){
@@ -104,7 +109,7 @@ void setColorRainbow(displayBuffer* buffer, uint8_t offset, int width, uint8_t b
 	}
 }
 
-void setBicolorRainbow(displayBuffer* buffer, uint8_t offset, int width, uint8_t separation, uint8_t brightness){
+void setBicolorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, uint8_t separation, uint8_t brightness){
 	int delta = width / NUM_LEDS;
 
 	for(int digit = 0; digit < (DIGITS); digit++){
@@ -113,10 +118,10 @@ void setBicolorRainbow(displayBuffer* buffer, uint8_t offset, int width, uint8_t
 			int led_pos = led + digit * 20;
 
 			if(led > 9){
-				buffer->layer0[led_pos].hue = (offset + separation + (delta * (led_pos))) % 255;
+				buffer->layer0[led_pos].hue = (int)(offset + separation + (delta * (led_pos))) % 255;
 			}
 			else{
-				buffer->layer0[led_pos].hue = (offset + (delta * (led_pos))) % 255;
+				buffer->layer0[led_pos].hue = (int)(offset + (delta * (led_pos))) % 255;
 			}
 			buffer->layer0[led_pos].sat = 255;
 			buffer->layer0[led_pos].val = brightness;

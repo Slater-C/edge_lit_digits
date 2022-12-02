@@ -17,6 +17,7 @@
 #define LEDS_PER_DIGIT 20
 #define DIGITS 4
 #define NUM_LEDS 80
+#define MAX_UPDATE_INTERVAL 8 // 8 millisecond update interval
 
 const uint8_t DIGIT_ADDRESSES[10] = {5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
 
@@ -60,5 +61,5 @@ displayBuffer* getInactiveBuffer();
 void drawDisplay(displayBuffer* buffer, CRGB leds[]);
 void writeNumber(displayBuffer* buffer, uint32_t number);
 void setColorStatic(displayBuffer* buffer, uint8_t hue, uint8_t sat, uint8_t val);
-void setColorRainbow(displayBuffer* buffer, uint8_t offset, int width, uint8_t brightness);
-void setBicolorRainbow(displayBuffer* buffer, uint8_t offset, int width, uint8_t separation, uint8_t brightness);
+void setColorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, uint8_t brightness);
+void setBicolorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, uint8_t separation, uint8_t brightness);

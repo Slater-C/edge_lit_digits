@@ -1,8 +1,11 @@
 #include <Arduino.h>
-#include "display.h"
+//#define ENCODER_DO_NOT_USE_INTERRUPTS
+#define ENCODER_OPTIMIZE_INTERRUPTS
+#include <Encoder.h>
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include "display.h"
 #include "clock.h"
 
 // Information about the LED strip itself
@@ -11,16 +14,30 @@
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
+#define DST_SWITCH 				14	// D5
+#define NIGHT_MODE_SWITCH 		14	// D6
+#define ROTARY_ENCODER_BUTTON 	2 	// D4
+#define ROTARY_ENCODER_A      	4 	// D2
+#define ROTARY_ENCODER_B      	0 	// D3
+
+Encoder myEnc(ROTARY_ENCODER_A, ROTARY_ENCODER_B);
+bool buttonState = false;
+
 #define BRIGHTNESS  255
+#define AP_CONFIG_PORTAL_TIMEOUT 180 // Seconds
+#define WIFI_CONNECT_ATTEMPT_TIMEOUT 15 // Seconds
 
 displayBuffer buffer0;
 displayBuffer buffer1;
+
+void buttonUpdate();
+void configModeCallback(WiFiManager *myWiFiManager);
 
 // NTP Servers:
 static const char ntpServerName[] = "us.pool.ntp.org";
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, ntpServerName, -14400, 6000000);	// -4 hours, 1 hour update interval
+NTPClient timeClient(ntpUDP, ntpServerName, -18000, 6000000);	// -5 hours, 1 hour update interval
 
 void setup() {
 	
@@ -37,6 +54,13 @@ void setup() {
 
     initBufferState(&buffer0, &buffer1);
 
+	pinMode(DST_SWITCH, INPUT_PULLUP);
+	pinMode(NIGHT_MODE_SWITCH, INPUT_PULLUP);
+	pinMode(ROTARY_ENCODER_BUTTON, INPUT_PULLUP); //	D4, rotary encoder knob press
+  	// attachInterrupt(ROTARY_ENCODER_BUTTON, buttonUpdate, RISING);
+
+
+
 	for(int i = 0; i < 90; i++){
 		static int num = 0;
 		
@@ -51,27 +75,29 @@ void setup() {
 		delay(10);
 	}
 	
+	WiFi.mode(WIFI_STA);
+	WiFi.begin();
+	unsigned long retryTime = millis();
+	while(WiFi.status() != WL_CONNECTED){
+		if(millis() > (retryTime + (WIFI_CONNECT_ATTEMPT_TIMEOUT * 1000))){
+			break;
+		}
+		yield();
+		delay(10);
+	}
+
 	WiFiManager wifiManager;
-	wifiManager.autoConnect("SC-Clock");
+	wifiManager.setConfigPortalTimeout(AP_CONFIG_PORTAL_TIMEOUT);
+	wifiManager.setAPCallback(configModeCallback);
 
-	if (WiFi.status() != WL_CONNECTED) {
-		writeNumber(getActiveBuffer(), 1111);
-		setBicolorRainbow(getActiveBuffer(), 160, 0, 80, 255);
-		drawDisplay(getActiveBuffer(), leds);
-		delay(1000);
+	if(WiFi.status() != WL_CONNECTED){
+		bool status = wifiManager.autoConnect("SC-Clock");
+		if (!status) {	// Not connected
+			ESP.restart();
+		}
 	}
+
 	
-	if (!wifiManager.autoConnect()) {
-		Serial.println("failed to connect and hit timeout");
-		//reset and try again, or maybe put it to deep sleep
-		writeNumber(getActiveBuffer(), 0);
-		setBicolorRainbow(getActiveBuffer(), 0, 0, 80, 255);
-		drawDisplay(getActiveBuffer(), leds);
-		delay(5000);
-		ESP.restart();
-		delay(1000);
-	}
-
 	
 	// Connection success!
 	writeNumber(getActiveBuffer(), 2222);
@@ -89,13 +115,37 @@ void setup() {
 void loop() {
 	
 	static int count = 0;
-	writeNumber(getActiveBuffer(), formatTime(timeClient.getHours(), timeClient.getMinutes()));
-	setBicolorRainbow(getActiveBuffer(), count % 255, 100, 40, 255);
-	drawDisplay(getActiveBuffer(), leds);
-	
-	//Serial.print("Hour:"); Serial.print(timeClient.getHours()); Serial.print(" | Formatted: "); Serial.println(((timeClient.getHours() % 12) * 100) + timeClient.getMinutes());
-	
-	count++;
-	delay(20);
+	static int offset = 0;
+	static unsigned long lastUpdate = 0;
 
+	long encoderRaw = myEnc.read() >> 2;
+	unsigned long encoderPosition = abs(encoderRaw);
+	yield();
+	
+	if(millis() > (lastUpdate + 5)){
+		//Serial.print("Encoder: "); Serial.println(encoderPosition); 
+		writeNumber(getActiveBuffer(), formatTime(timeClient.getHours(), timeClient.getMinutes()));
+		//writeNumber(getActiveBuffer(), encoderPosition);
+		setBicolorRainbow(getActiveBuffer(), offset % 255, 80, encoderPosition % 255, 255);
+		//setBicolorRainbow(getActiveBuffer(), encoderPosition, 0, 0, 255);
+		drawDisplay(getActiveBuffer(), leds);
+		
+		if((count % 5) == 0){
+			//Serial.print("Hour: "); Serial.print(timeClient.getHours()); Serial.print(" | Formatted: "); Serial.println(((timeClient.getHours() % 12) * 100) + timeClient.getMinutes());
+			offset++;
+		}
+		
+		count++;
+		lastUpdate = millis();
+	}
+}
+
+void buttonUpdate(){
+	buttonState = true;
+	return;
+}
+
+void configModeCallback(WiFiManager *myWiFiManager) {
+	Serial.println("No wifi network found, entering config mode.");
+	// Do light stuff
 }
