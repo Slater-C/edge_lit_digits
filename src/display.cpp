@@ -87,6 +87,38 @@ void writeNumber(displayBuffer* buffer, uint32_t number){
 	}
 }
 
+/// @brief Light an individual pane of a certain digit.
+/// @param buffer 
+/// @param digit Digit index, 0-3. 0 is the least significant digit.
+/// @param pane Pane index, 0-9.
+/// @param separation Hue separation between left and right LEDs.
+/// @param hue 
+/// @param sat 
+/// @param val 
+void lightPane(displayBuffer* buffer, int digit, int pane, uint8_t separation, uint8_t hue, uint8_t sat, uint8_t val){
+
+	// Keep in range
+	digit = digit % 4;
+	pane = pane % 10;
+
+	// Right LED
+	buffer->layer0[DIGIT_ADDRESSES[pane] + (digit * 20)].transparent = false; 			
+	buffer->layer0[DIGIT_ADDRESSES[pane] + (digit * 20)].hue = hue;
+	buffer->layer0[DIGIT_ADDRESSES[pane] + (digit * 20)].sat = sat;
+	buffer->layer0[DIGIT_ADDRESSES[pane] + (digit * 20)].val = val;
+	
+	// Left LED
+	buffer->layer0[DIGIT_ADDRESSES[pane] + 10 + (digit * 20)].transparent = false; 			
+	buffer->layer0[DIGIT_ADDRESSES[pane] + 10 + (digit * 20)].hue = hue + separation;
+	buffer->layer0[DIGIT_ADDRESSES[pane] + 10 + (digit * 20)].sat = sat;
+	buffer->layer0[DIGIT_ADDRESSES[pane] + 10 + (digit * 20)].val = val;
+}
+
+/// @brief Set all active LEDs to the static color provided (hue, saturation, brightness)
+/// @param buffer 
+/// @param hue 
+/// @param sat 
+/// @param val 
 void setColorStatic(displayBuffer* buffer, uint8_t hue, uint8_t sat, uint8_t val){
 	for(int i = 0; i < NUM_LEDS; i++){
 		
@@ -97,6 +129,12 @@ void setColorStatic(displayBuffer* buffer, uint8_t hue, uint8_t sat, uint8_t val
 	}
 }
 
+
+/// @brief A rainbow effect from left to right
+/// @param buffer 
+/// @param offset An offset to allow the rainbow to scroll and neatly wrap.
+/// @param width The width of the rainbow from the leftmost to rightmost LED.
+/// @param brightness 
 void setColorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, uint8_t brightness){
 	int delta = width / NUM_LEDS;
 
@@ -109,6 +147,12 @@ void setColorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, 
 	}
 }
 
+/// @brief A rainbow effect from left to right, where the two LEDs in each digit have a pronounced color shift.
+/// @param buffer 
+/// @param offset An offset to allow the rainbow to scroll and neatly wrap.
+/// @param width The width of the rainbow from the leftmost to rightmost LED.
+/// @param separation The difference (in hue) between the two LEDs in an individual digit.
+/// @param brightness 
 void setBicolorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, uint8_t separation, uint8_t brightness){
 	int delta = width / NUM_LEDS;
 
@@ -127,6 +171,49 @@ void setBicolorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width
 			buffer->layer0[led_pos].val = brightness;
 
 		}
-
 	}
+}
+
+
+// EFFECTS:
+
+void bootSequenceEffect(displayBuffer* buffer, CRGB leds[], int stage){
+	// static int startingPanes[10];
+	// randomSeed(millis());
+	// for(int i = 0; i <= 9; i++){
+	// 	startingPanes[i] = random(4);
+	// }
+	int digit = 0;
+	int pane = 0;
+	int hue;
+
+	if(stage){
+		hue = 96;
+	}
+	else{
+		hue = 160;
+	}
+
+	for(int i = 0; i <= 200; i++){
+
+		// Right LED
+		buffer->layer0[DIGIT_ADDRESSES[pane] + (digit * 20)].transparent = false; 			
+		buffer->layer0[DIGIT_ADDRESSES[pane] + (digit * 20)].hue = hue;
+		buffer->layer0[DIGIT_ADDRESSES[pane] + (digit * 20)].sat = 255;
+		buffer->layer0[DIGIT_ADDRESSES[pane] + (digit * 20)].val = 255;
+		
+		// Left LED
+		buffer->layer0[DIGIT_ADDRESSES[pane] + 10 + (digit * 20)].transparent = false; 			
+		buffer->layer0[DIGIT_ADDRESSES[pane] + 10 + (digit * 20)].hue = hue + 10;
+		buffer->layer0[DIGIT_ADDRESSES[pane] + 10 + (digit * 20)].sat = 255;
+		buffer->layer0[DIGIT_ADDRESSES[pane] + 10 + (digit * 20)].val = 255;
+
+		drawDisplay(getActiveBuffer(), leds);
+		if((i % 9) == 0){
+			digit = (digit + 1) % 4;	
+		}
+		else{
+			pane = (pane + 1) % 10;
+		}
+	} 
 }

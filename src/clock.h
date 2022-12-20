@@ -6,4 +6,5 @@
 #include <WiFiUdp.h>
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
 
-int formatTime(int hour, int minute);
+int formatTime(int hour, int minute, unsigned int offset_hours);
+int formatTime24(int hour, int minute, unsigned int offset_hours);

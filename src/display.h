@@ -60,6 +60,9 @@ displayBuffer* getActiveBuffer();
 displayBuffer* getInactiveBuffer();
 void drawDisplay(displayBuffer* buffer, CRGB leds[]);
 void writeNumber(displayBuffer* buffer, uint32_t number);
+void lightPane(displayBuffer* buffer, int digit, int pane, uint8_t separation, uint8_t hue, uint8_t sat, uint8_t val);
 void setColorStatic(displayBuffer* buffer, uint8_t hue, uint8_t sat, uint8_t val);
 void setColorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, uint8_t brightness);
 void setBicolorRainbow(displayBuffer* buffer, uint8_t offset, unsigned int width, uint8_t separation, uint8_t brightness);
+
+void bootSequenceEffect(displayBuffer* buffer, CRGB leds[], int stage);
