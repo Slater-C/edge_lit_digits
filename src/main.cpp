@@ -1,5 +1,5 @@
 #include <Arduino.h>
-//#define ENCODER_DO_NOT_USE_INTERRUPTS
+// #define ENCODER_DO_NOT_USE_INTERRUPTS
 // #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
